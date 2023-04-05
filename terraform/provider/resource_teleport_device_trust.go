@@ -92,13 +92,13 @@ func (r resourceTeleportDeviceV1) Create(ctx context.Context, req tfsdk.CreateRe
 
 	
 
-	dev, err := r.p.Client.UpsertDeviceResource(ctx, trustedDevice)
+	_, err = r.p.Client.UpsertDeviceResource(ctx, trustedDevice)
 	if err != nil {
 		resp.Diagnostics.Append(diagFromWrappedErr("Error creating DeviceV1", trace.Wrap(err), "device"))
 		return
 	}
 
-	id := dev.Metadata.Name
+	id := trustedDevice.Metadata.Name
 	// Not really an inferface, just using the same name for easier templating.
 	var trustedDeviceI *apitypes.DeviceV1
 	
@@ -138,8 +138,6 @@ func (r resourceTeleportDeviceV1) Create(ctx context.Context, req tfsdk.CreateRe
 	}
 
 	plan.Attrs["id"] = types.String{Value: trustedDevice.Metadata.Name}
-    plan.Attrs["Metadata.name"] = types.String{Value: trustedDevice.Metadata.Name}
-   
 
 	diags = resp.State.Set(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -158,8 +156,7 @@ func (r resourceTeleportDeviceV1) Read(ctx context.Context, req tfsdk.ReadResour
 	}
 
 	var id types.String
-    p :=  path.Root("id") 
-	diags = req.State.GetAttribute(ctx, p, &id)
+	diags = req.State.GetAttribute(ctx, path.Root("metadata").AtName("name"), &id)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -211,18 +208,7 @@ func (r resourceTeleportDeviceV1) Update(ctx context.Context, req tfsdk.UpdateRe
 		return
 	}
 
-
-    var id types.String
-    p := path.Root("id")
-    diags = req.State.GetAttribute(ctx, p , &id)
-    resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-    trustedDevice.Metadata.Name = id.Value
-    
-
-    name := trustedDevice.Metadata.Name
+	name := trustedDevice.Metadata.Name
 
 	
 
@@ -249,12 +235,10 @@ func (r resourceTeleportDeviceV1) Update(ctx context.Context, req tfsdk.UpdateRe
 			resp.Diagnostics.Append(diagFromWrappedErr("Error reading DeviceV1", err, "device"))
 			return
 		}
-
-        if trustedDeviceBefore.Metadata.Name != trustedDevice.Metadata.Name || true {
+		if trustedDeviceBefore.GetMetadata().ID != trustedDevice.GetMetadata().ID || true {
 			break
 		}
-
-        
+		
 
 		if err := backoff.Do(ctx); err != nil {
 			resp.Diagnostics.Append(diagFromWrappedErr("Error reading DeviceV1", trace.Wrap(err), "device"))
@@ -283,10 +267,7 @@ func (r resourceTeleportDeviceV1) Update(ctx context.Context, req tfsdk.UpdateRe
 // Delete deletes Teleport DeviceV1
 func (r resourceTeleportDeviceV1) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
 	var id types.String
-   
-
-    p :=  path.Root("id") 
-	diags := req.State.GetAttribute(ctx, p , &id)
+	diags := req.State.GetAttribute(ctx, path.Root("metadata").AtName("name"), &id)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

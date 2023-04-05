@@ -330,7 +330,7 @@ func main() {
 	generate(user, pluralDataSource, "provider/data_source_teleport_user.go")
 	generate(loginRule, pluralResource, "provider/resource_teleport_login_rule.go")
 	generate(loginRule, pluralDataSource, "provider/data_source_teleport_login_rule.go")
-	generate(deviceTrust, "dt_resource.go.tpl", "provider/resource_teleport_device_trust.go")
+	generate(deviceTrust, pluralResource, "provider/resource_teleport_device_trust.go")
 	generate(deviceTrust, pluralDataSource, "provider/data_source_teleport_device_trust.go")
 }
 
